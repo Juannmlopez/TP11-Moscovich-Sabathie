@@ -1,0 +1,915 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API Clon de Instagram",
+    "version": "1.0.0",
+    "description": "Backend con Node.js, Express, PostgreSQL (Supabase) y autenticación JWT"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Servidor local"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Autenticación",
+      "description": "Registro e inicio de sesión (públicos)"
+    },
+    {
+      "name": "Usuarios",
+      "description": "Perfil del usuario logueado (requieren token)"
+    },
+    {
+      "name": "Publicaciones",
+      "description": "Feed y creación de publicaciones"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Registrar un usuario",
+        "description": "Crea una cuenta nueva. La contraseña se guarda encriptada con bcrypt.",
+        "responses": {
+          "201": {
+            "description": "Usuario creado correctamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mensaje": {
+                      "type": "string",
+                      "example": "Usuario creado correctamente"
+                    },
+                    "usuario": {
+                      "$ref": "#/components/schemas/Usuario"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Faltan campos, contraseña de menos de 6 caracteres, o email/usuario ya registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensaje"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistroBody"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Iniciar sesión",
+        "description": "Verifica email y contraseña y devuelve un token JWT (válido 2 horas).",
+        "responses": {
+          "200": {
+            "description": "Login exitoso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mensaje": {
+                      "type": "string",
+                      "example": "Login exitoso"
+                    },
+                    "token": {
+                      "type": "string",
+                      "example": "eyJhbGciOiJIUzI1NiIs..."
+                    },
+                    "usuario": {
+                      "$ref": "#/components/schemas/Usuario"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Email o password no enviados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensaje"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Email o contraseña incorrectos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensaje"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginBody"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/usuarios/perfil": {
+      "get": {
+        "tags": [
+          "Usuarios"
+        ],
+        "summary": "Obtener mi perfil",
+        "description": "Devuelve el usuario del token y todas sus publicaciones.",
+        "responses": {
+          "200": {
+            "description": "Perfil obtenido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "usuario": {
+                      "$ref": "#/components/schemas/Usuario"
+                    },
+                    "publicaciones": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Publicacion"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, con formato inválido o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensaje"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Usuario no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensaje"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Usuarios"
+        ],
+        "summary": "Actualizar mi perfil",
+        "description": "Modifica solo los campos enviados; los omitidos conservan su valor.",
+        "responses": {
+          "200": {
+            "description": "Perfil actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mensaje": {
+                      "type": "string",
+                      "example": "Perfil actualizado correctamente"
+                    },
+                    "usuario": {
+                      "$ref": "#/components/schemas/Usuario"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, inválido o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensaje"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PerfilBody"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/publicaciones/": {
+      "get": {
+        "tags": [
+          "Publicaciones"
+        ],
+        "summary": "Obtener el feed",
+        "description": "Devuelve todas las publicaciones (más recientes primero) con nombre y foto del autor.",
+        "responses": {
+          "200": {
+            "description": "Lista de publicaciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Publicacion"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Publicaciones"
+        ],
+        "summary": "Crear una publicación",
+        "description": "El autor se toma del token; no hay que enviar usuario_id.",
+        "responses": {
+          "201": {
+            "description": "Publicación creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mensaje": {
+                      "type": "string",
+                      "example": "Publicacion creada correctamente"
+                    },
+                    "publicacion": {
+                      "$ref": "#/components/schemas/Publicacion"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "La url_imagen es obligatoria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensaje"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, inválido o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensaje"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicacionBody"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Usuario": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "object"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "integer"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Identificador único del usuario"
+                  },
+                  "example": {
+                    "type": "number",
+                    "example": 1
+                  }
+                }
+              },
+              "nombre_usuario": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Nombre de usuario único (@usuario)"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "gato_programador"
+                  }
+                }
+              },
+              "nombre_completo": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Nombre y apellido"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "Juan Perez"
+                  }
+                }
+              },
+              "email": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Correo electrónico único"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "juan@mail.com"
+                  }
+                }
+              },
+              "foto_perfil": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "URL de la foto de perfil"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "https://..."
+                  }
+                }
+              },
+              "biografia": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Texto de presentación"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "Amante de los gatos"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Publicacion": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "object"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "integer"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Identificador de la publicación"
+                  },
+                  "example": {
+                    "type": "number",
+                    "example": 10
+                  }
+                }
+              },
+              "usuario_id": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "integer"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "ID del usuario autor"
+                  },
+                  "example": {
+                    "type": "number",
+                    "example": 1
+                  }
+                }
+              },
+              "url_imagen": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "URL de la imagen publicada"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "https://cataas.com/cat"
+                  }
+                }
+              },
+              "descripcion": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Texto de la publicación"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "Mi gato"
+                  }
+                }
+              },
+              "likes": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "integer"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Cantidad de likes (default 0)"
+                  },
+                  "example": {
+                    "type": "number",
+                    "example": 0
+                  }
+                }
+              },
+              "fecha_creacion": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "format": {
+                    "type": "string",
+                    "example": "date-time"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Fecha de creación"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "2026-09-24T15:30:00.000Z"
+                  }
+                }
+              },
+              "nombre_usuario": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Autor (solo en el feed)"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "gato_programador"
+                  }
+                }
+              },
+              "foto_perfil": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Foto del autor (solo en el feed)"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "https://..."
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "RegistroBody": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "object"
+          },
+          "required": {
+            "type": "array",
+            "example": [
+              "nombre_usuario",
+              "nombre_completo",
+              "email",
+              "password"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "nombre_usuario": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "gato_programador"
+                  }
+                }
+              },
+              "nombre_completo": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "Juan Perez"
+                  }
+                }
+              },
+              "email": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "juan@mail.com"
+                  }
+                }
+              },
+              "password": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Mínimo 6 caracteres"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "123456"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "LoginBody": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "object"
+          },
+          "required": {
+            "type": "array",
+            "example": [
+              "email",
+              "password"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "email": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "juan@mail.com"
+                  }
+                }
+              },
+              "password": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "123456"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "PerfilBody": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "object"
+          },
+          "description": {
+            "type": "string",
+            "example": "Todos los campos son opcionales"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "nombre_completo": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "Juan P."
+                  }
+                }
+              },
+              "biografia": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "Amante de los gatos"
+                  }
+                }
+              },
+              "foto_perfil": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "https://..."
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "PublicacionBody": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "object"
+          },
+          "required": {
+            "type": "array",
+            "example": [
+              "url_imagen"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "url_imagen": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "https://cataas.com/cat"
+                  }
+                }
+              },
+              "descripcion": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "Mi gato"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Mensaje": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "object"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "mensaje": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "Descripción del resultado o del error"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
