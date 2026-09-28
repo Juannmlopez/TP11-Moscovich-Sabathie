@@ -16,7 +16,7 @@ const app = express();
 // Middlewares globales
 app.use(cors()); // Permite solicitudes desde otros orígenes
 app.use(express.json()); // Parseo de JSON en el cuerpo de las peticiones
-
+app.use(express.urlencoded({ extended: true })); // Permite recibir formularios (un input por campo en Swagger)
 // Montaje de rutas con prefijos
 app.use('/api/auth', authRoutes); // Rutas de autenticación
 app.use('/api/usuarios', userRoutes); // Rutas de usuario protegidas

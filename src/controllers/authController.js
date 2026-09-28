@@ -12,9 +12,12 @@ async function register(req, res) {
   /*  #swagger.tags = ['Autenticación']
       #swagger.summary = 'Registrar un usuario'
       #swagger.description = 'Crea una cuenta nueva. La contraseña se guarda encriptada con bcrypt.'
-      #swagger.requestBody = {
+            #swagger.requestBody = {
         required: true,
-        content: { 'application/json': { schema: { $ref: '#/components/schemas/RegistroBody' } } }
+        content: {
+          'application/x-www-form-urlencoded': { schema: { $ref: '#/components/schemas/RegistroBody' } },
+          'application/json': { schema: { $ref: '#/components/schemas/RegistroBody' } }
+        }
       }
       #swagger.responses[201] = {
         description: 'Usuario creado correctamente',
@@ -54,9 +57,12 @@ async function login(req, res) {
   /*  #swagger.tags = ['Autenticación']
       #swagger.summary = 'Iniciar sesión'
       #swagger.description = 'Verifica email y contraseña y devuelve un token JWT (válido 2 horas).'
-      #swagger.requestBody = {
+            #swagger.requestBody = {
         required: true,
-        content: { 'application/json': { schema: { $ref: '#/components/schemas/LoginBody' } } }
+        content: {
+          'application/x-www-form-urlencoded': { schema: { $ref: '#/components/schemas/LoginBody' } },
+          'application/json': { schema: { $ref: '#/components/schemas/LoginBody' } }
+        }
       }
       #swagger.responses[200] = {
         description: 'Login exitoso',

@@ -30,9 +30,12 @@ async function crearPublicacion(req, res) {
       #swagger.summary = 'Crear una publicación'
       #swagger.description = 'El autor se toma del token; no hay que enviar usuario_id.'
       #swagger.security = [{ bearerAuth: [] }]
-      #swagger.requestBody = {
+           #swagger.requestBody = {
         required: true,
-        content: { 'application/json': { schema: { $ref: '#/components/schemas/PublicacionBody' } } }
+        content: {
+          'application/x-www-form-urlencoded': { schema: { $ref: '#/components/schemas/PublicacionBody' } },
+          'application/json': { schema: { $ref: '#/components/schemas/PublicacionBody' } }
+        }
       }
       #swagger.responses[201] = {
         description: 'Publicación creada',

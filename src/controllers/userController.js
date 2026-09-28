@@ -48,9 +48,12 @@ async function actualizarPerfil(req, res) {
       #swagger.summary = 'Actualizar mi perfil'
       #swagger.description = 'Modifica solo los campos enviados; los omitidos conservan su valor.'
       #swagger.security = [{ bearerAuth: [] }]
-      #swagger.requestBody = {
+            #swagger.requestBody = {
         required: true,
-        content: { 'application/json': { schema: { $ref: '#/components/schemas/PerfilBody' } } }
+        content: {
+          'application/x-www-form-urlencoded': { schema: { $ref: '#/components/schemas/PerfilBody' } },
+          'application/json': { schema: { $ref: '#/components/schemas/PerfilBody' } }
+        }
       }
       #swagger.responses[200] = {
         description: 'Perfil actualizado',
